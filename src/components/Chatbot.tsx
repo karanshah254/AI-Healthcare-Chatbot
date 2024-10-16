@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Chatbot.css';
 import SendIcon from '@mui/icons-material/Send';
 
@@ -22,11 +22,12 @@ const Chatbot: React.FC = () => {
 
     const [messages, setMessages] = useState<string[]>(defaultContext);
     const [input, setInput] = useState<string>('');
+    const chatBodyRef = useRef<HTMLDivElement>(null);
 
     const handleSend = () => {
         if (input.trim()) {
             const userMessage = input.trim();
-            let botResponse = "I'm sorry, I don't have information on that right now.";
+            let botResponse = "Please ask a health-related question for me to assist you.";
 
             const lowerCaseInput = userMessage.toLowerCase();
             for (const keyword in responses) {
@@ -47,10 +48,16 @@ const Chatbot: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        if (chatBodyRef.current) {
+            chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+        }
+    }, [messages])
+
     return (
         <div className="chatbot-container">
             <div className="chatbot-header">Healthify - Your Health guide</div>
-            <div className="chatbot-body">
+            <div className="chatbot-body" ref={chatBodyRef}>
                 {messages.map((msg, idx) => (
                     <div key={idx} className={`message ${idx % 2 === 0 ? 'bot' : 'user'}`}>{msg}</div>
                 ))}
@@ -61,7 +68,7 @@ const Chatbot: React.FC = () => {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask me a health question..."
+                    placeholder="Message Healthify"
                 />
                 <button onClick={handleSend}>
                     <SendIcon />
