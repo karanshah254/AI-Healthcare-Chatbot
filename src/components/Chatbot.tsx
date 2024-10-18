@@ -49,8 +49,21 @@ const Chatbot: React.FC = () => {
     };
 
     useEffect(() => {
-        if (chatBodyRef.current) {
-            chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+        const scrollToBottom = () => {
+            if (chatBodyRef.current) {
+                chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+            }
+        };
+
+        scrollToBottom(); // scroll when messages changes/update
+
+        const handleResize = () => {
+            scrollToBottom(); // scroll when window resizes
+        }
+
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize)
         }
     }, [messages])
 
