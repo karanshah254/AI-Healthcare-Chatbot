@@ -20,9 +20,11 @@ const Chatbot: React.FC = () => {
         diabetes: "Diabetes is a chronic condition that affects how your body processes blood sugar. Symptoms include increased thirst, frequent urination, and unexplained weight loss. Proper management involves diet, exercise, and medication. Consult a healthcare provider for diagnosis and treatment.",
     };
 
-    const [messages, setMessages] = useState<string[]>(defaultContext);
+    const [messages, setMessages] = useState<{ text: string; type: 'user' | 'bot' }[]>(defaultContext.map((msg) => ({ text: msg, type: 'bot' })));
     const [input, setInput] = useState<string>('');
     const chatBodyRef = useRef<HTMLDivElement>(null);
+    const [responseQueue, setResponseQueue] = useState<string[]>([]);
+    const [botMessage, setBotMessage] = useState<string>(''); // Temporary message for line-by-line rendering
 
     const handleSend = () => {
         if (input.trim()) {
@@ -37,8 +39,10 @@ const Chatbot: React.FC = () => {
                 }
             }
 
-            setMessages([...messages, `You: ${userMessage}`, `Healthify: ${botResponse}`]);
+            setMessages((prev) => [...prev, { text: userMessage, type: 'user' }]);
             setInput('');
+            setBotMessage('')
+            setResponseQueue(botResponse.split('. ').map((line) => line.trim() + '.')); // Split the response into lines
         }
     };
 
@@ -57,23 +61,30 @@ const Chatbot: React.FC = () => {
 
         scrollToBottom(); // scroll when messages changes/update
 
-        const handleResize = () => {
-            scrollToBottom(); // scroll when window resizes
+        if (responseQueue.length > 0) {
+            const timeout = setTimeout(() => {
+                const nextLine = responseQueue[0];
+                setBotMessage((prev) => (prev ? `${prev} ${nextLine}` : nextLine)); // Append the next line
+                setResponseQueue((prev) => prev.slice(1)); // Remove the processed line from the queue
+            }, 1000); // Adjust delay for line-by-line rendering
+            return () => clearTimeout(timeout);
+        } else if (botMessage && responseQueue.length === 0) {
+            // Add the completed bot message to messages
+            setMessages((prev) => [...prev, { text: botMessage, type: 'bot' }]);
+            setBotMessage(''); // Clear temporary bot message
         }
-
-        window.addEventListener('resize', handleResize);
-        return () => {
-            window.removeEventListener('resize', handleResize)
-        }
-    }, [messages])
+        
+    }, [responseQueue, botMessage])
 
     return (
         <div className="chatbot-container">
             <div className="chatbot-header">Healthify - Your Health guide</div>
             <div className="chatbot-body" ref={chatBodyRef}>
                 {messages.map((msg, idx) => (
-                    <div key={idx} className={`message ${idx % 2 === 0 ? 'bot' : 'user'}`}>{msg}</div>
+                    <div key={idx} className={`message ${msg.type}`}>{msg.text}</div>
                 ))}
+                {/* Temporary bot message rendered line by line */}
+                {botMessage && <div className="message bot">{botMessage}</div>}
             </div>
             <div className="input-field">
                 <input
