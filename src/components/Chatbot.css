@@ -135,3 +135,21 @@ body {
         font-size: 0.9em;
     }
 }
+
+.message.bot h1,
+.message.bot h2,
+.message.bot h3 {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.message.bot ul {
+    padding-left: 20px;
+}
+
+.message.bot code {
+    background-color: #f4f4f4;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+}
