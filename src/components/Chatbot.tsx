@@ -3,8 +3,6 @@ import './Chatbot.css';
 import SendIcon from '@mui/icons-material/Send';
 import ReactMarkdown from 'react-markdown';
 
-// http://localhost:8000/chat
-
 const Chatbot: React.FC = () => {
     const defaultContext = [
         "Hello! I’m here to help you with health-related questions. Feel free to ask me anything!",
@@ -14,8 +12,7 @@ const Chatbot: React.FC = () => {
     const [input, setInput] = useState<string>('');
     const chatBodyRef = useRef<HTMLDivElement>(null);
     const [responseQueue, setResponseQueue] = useState<string[]>([]);
-    const [botMessage, setBotMessage] = useState<string>('');
-    const render_url = import.meta.env.render_url;
+    const [botMessage, setBotMessage] = useState<string>(''); // Temporary message for line-by-line rendering
 
     const handleSend = async () => {
         if (input.trim()) {
@@ -26,7 +23,7 @@ const Chatbot: React.FC = () => {
             setBotMessage('');
 
             try {
-                const response = await fetch(`${render_url}/chat`, {
+                const response = await fetch("http://localhost:8000/chat", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -56,7 +53,7 @@ const Chatbot: React.FC = () => {
         // Fetch chat history once on component mount
         const fetchChatHistory = async () => {
             try {
-                const response = await fetch(`${render_url}/chat/history`);
+                const response = await fetch('http://localhost:8000/chat/history');
                 const history = await response.json();
                 if (history.length === 0) {
                     setMessages([{ text: "Hey, how can I assist you with medical and healthcare related queries?", type: 'bot' }]);
