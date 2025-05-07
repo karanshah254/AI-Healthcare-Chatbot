@@ -1,24 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Chatbot.css';
 import SendIcon from '@mui/icons-material/Send';
+import ReactMarkdown from 'react-markdown';
 
 const Chatbot: React.FC = () => {
     const defaultContext = [
         "Hello! I’m here to help you with health-related questions. Feel free to ask me anything!",
     ];
-
-    const responses: { [key: string]: string } = {
-        hi: "Hello! How can I help you today?",
-        hey: "Hello! How can I help you today?",
-        hello: "Hello! How can I help you today?",
-        headache: "Headaches can arise from various causes, such as tension, dehydration, or lack of sleep. To ease a headache, find a quiet, dark room to rest in, and consider applying a cold or warm compress to your forehead. Stay well-hydrated by drinking water throughout the day, and avoid caffeine or alcohol. Over-the-counter pain relievers like acetaminophen or ibuprofen can be helpful, but avoid them if you experience headaches frequently without consulting a doctor.",
-        fever: "A fever is often a sign that your body is fighting an infection. To reduce a fever, make sure to drink plenty of fluids to stay hydrated, as fever can lead to dehydration. Rest is crucial for recovery, and you can take acetaminophen or ibuprofen to help lower your temperature. Dress lightly and avoid excessive blankets. If the fever lasts more than 24 hours or is very high, seek medical attention.",
-        cough: "A persistent cough can be caused by factors like a cold, allergies, or dry air. To alleviate a cough, try staying hydrated by drinking warm fluids such as herbal teas or warm water with honey and lemon. Using a humidifier can help keep the air moist, easing throat irritation. Cough lozenges or over-the-counter cough syrups can provide relief. If the cough persists for more than a few days, consult a healthcare provider.",
-        "stomach ache": "Stomach aches can result from various causes, including indigestion or stress. Try eating light, non-spicy foods, and avoid caffeine. If it persists, consider consulting a doctor.",
-        "back pain": "Back pain is common and can be due to poor posture, heavy lifting, or stress. Try gentle stretches, resting, and using a warm compress. Persistent pain should be assessed by a professional.",
-        cancer: "Cancer is a serious disease that can affect any part of the body. Symptoms vary depending on the type of cancer. Early detection and treatment are crucial for better outcomes. If you have concerns about cancer, consult a healthcare provider.",
-        diabetes: "Diabetes is a chronic condition that affects how your body processes blood sugar. Symptoms include increased thirst, frequent urination, and unexplained weight loss. Proper management involves diet, exercise, and medication. Consult a healthcare provider for diagnosis and treatment.",
-    };
 
     const [messages, setMessages] = useState<{ text: string; type: 'user' | 'bot' }[]>(defaultContext.map((msg) => ({ text: msg, type: 'bot' })));
     const [input, setInput] = useState<string>('');
@@ -26,23 +14,31 @@ const Chatbot: React.FC = () => {
     const [responseQueue, setResponseQueue] = useState<string[]>([]);
     const [botMessage, setBotMessage] = useState<string>(''); // Temporary message for line-by-line rendering
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (input.trim()) {
             const userMessage = input.trim();
-            let botResponse = "Please ask a health-related question for me to assist you.";
 
-            const lowerCaseInput = userMessage.toLowerCase();
-            for (const keyword in responses) {
-                if (lowerCaseInput.includes(keyword)) {
-                    botResponse = responses[keyword];
-                    break;
-                }
-            }
-
-            setMessages((prev) => [...prev, { text: userMessage, type: 'user' }]);
+            setMessages(prev => [...prev, { text: userMessage, type: 'user' }]);
             setInput('');
-            setBotMessage('')
-            setResponseQueue(botResponse.split('. ').map((line) => line.trim() + '.')); // Split the response into lines
+            setBotMessage('');
+
+            try {
+                const response = await fetch("http://localhost:8000/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                const data = await response.json();
+                const botResponse = data.reply;
+
+                setResponseQueue(botResponse.split('. ').map((line: string) => line.trim() + '.'));
+            } catch (error) {
+                console.error("Error fetching from backend:", error);
+                setResponseQueue(["Sorry, something went wrong while getting a response."]);
+            }
         }
     };
 
@@ -51,6 +47,30 @@ const Chatbot: React.FC = () => {
             handleSend();
         }
     };
+
+    // for chat history
+    useEffect(() => {
+        // Fetch chat history once on component mount
+        const fetchChatHistory = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/chat/history');
+                const history = await response.json();
+                if (history.length === 0) {
+                    setMessages([{ text: "Hey, how can I assist you with medical and healthcare related queries?", type: 'bot' }]);
+                } else {
+                    const historyMessages = history.flatMap((msg: any) => [
+                        { text: msg.user, type: 'user' },
+                        { text: msg.bot, type: 'bot' }
+                    ]);
+                    setMessages(historyMessages);
+                }
+            } catch (error) {
+                console.error("Failed to fetch chat history:", error);
+            }
+        };
+
+        fetchChatHistory();
+    }, []);
 
     useEffect(() => {
         const scrollToBottom = () => {
@@ -73,7 +93,7 @@ const Chatbot: React.FC = () => {
             setMessages((prev) => [...prev, { text: botMessage, type: 'bot' }]);
             setBotMessage(''); // Clear temporary bot message
         }
-        
+
     }, [responseQueue, botMessage])
 
     return (
@@ -81,7 +101,14 @@ const Chatbot: React.FC = () => {
             <div className="chatbot-header">Healthify - Your Health guide</div>
             <div className="chatbot-body" ref={chatBodyRef}>
                 {messages.map((msg, idx) => (
-                    <div key={idx} className={`message ${msg.type}`}>{msg.text}</div>
+                    // <div key={idx} className={`message ${msg.type}`}>{msg.text}</div>
+                    <div key={idx} className={`message ${msg.type}`}>
+                        {msg.type === 'bot' ? (
+                            <ReactMarkdown>{msg.text}</ReactMarkdown>
+                        ) : (
+                            msg.text
+                        )}
+                    </div>
                 ))}
                 {/* Temporary bot message rendered line by line */}
                 {botMessage && <div className="message bot">{botMessage}</div>}
