@@ -16,7 +16,8 @@ PORT = os.getenv("PORT")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        f"http://localhost:{PORT}"
+        # f"http://localhost:{PORT}"
+        "*"
     ],  # Adjust this if your frontend runs elsewhere
     allow_credentials=True,
     allow_methods=["*"],
