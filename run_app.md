@@ -18,3 +18,10 @@ pip install -r requirements.txt
 ```code
 python -m uvicorn main:app --reload --port 8000
 ```
+4. Docker commands
+- >Run docker container first
+```
+cd backend
+docker build -t healthcare-backend .
+docker run -p 8000:8000 healthcare-backend
+```
