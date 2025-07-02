@@ -25,3 +25,5 @@ cd backend
 docker build -t healthcare-backend .
 docker run -p 8000:8000 healthcare-backend
 ```
+5. Swagger API documentation
+<link>http://localhost:8000/docs</link>
