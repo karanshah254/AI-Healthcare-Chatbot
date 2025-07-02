@@ -1,0 +1,8 @@
+{
+    "title": "Healthify - Your Health Guide",
+    "placeholder": "Message Healthify",
+    "defaultBotMsg": "Hey, how can I assist you with medical and healthcare related queries?",
+    "exportPDF": "Export as PDF",
+    "exportTXT": "Export as TXT",
+    "error": "Sorry, something went wrong while getting a response."
+}

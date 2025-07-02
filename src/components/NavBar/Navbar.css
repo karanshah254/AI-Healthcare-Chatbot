@@ -1,0 +1,61 @@
+.navbar {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 20px;
+    background-color: #0077cc;
+    color: white;
+    position: relative;
+    top: 0;
+    margin: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.navbar-actions button {
+    background-color: white;
+    color: #0077cc;
+    border: none;
+    padding: 6px 12px;
+    margin-left: 10px;
+    border-radius: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.navbar-actions button:hover {
+    background-color: #e0e0e0;
+}
+
+#pdf-button {
+    margin-right: 12px;
+}
+
+.language-select {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f0f4f8;
+    font-size: 14px;
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.language-select:hover {
+    border-color: #0077cc;
+    background-color: #eaf6ff;
+}
+
+.language-select:focus {
+    border-color: #0077cc;
+    box-shadow: 0 0 0 2px rgba(0, 119, 204, 0.3);
+}

@@ -1,7 +1,19 @@
 .app-container {
-    display: flex;
+    /* display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    background-color: #f0f4f8; */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 100vh;
     background-color: #f0f4f8;
+    padding: 0;
+    /* No padding */
+    margin: 0;
+    /* No margin */
+    box-sizing: border-box;
 }
