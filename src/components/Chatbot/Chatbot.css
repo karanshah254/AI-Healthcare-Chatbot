@@ -1,15 +1,16 @@
 /* src/components/Chatbot.css */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
 .chatbot-container {
-    width: 400px;
+    width: 500px;
     max-width: 100%;
-    height: 600px;
+    height: 680px;
     background-color: #f0f4f8;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    font-family: 'Arial', sans-serif;
+    font-family: 'Open Sans', sans-serif;
     margin-top: 10px;
     /* Give some spacing below Navbar */
 }
@@ -25,6 +26,7 @@ body {
     font-size: 1.2em;
     text-align: center;
     flex-shrink: 0;
+    border-radius: 10px 10px 0 0;
 }
 
 .chatbot-body {

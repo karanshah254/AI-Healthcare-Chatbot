@@ -37,7 +37,15 @@ const Chatbot: React.FC = () => {
                 });
 
                 const data = await response.json();
-                const botResponse = data.reply;
+                let botResponse = data.reply;
+
+                if (data.sources && data.sources.length > 0) {
+                    const sourcesText = data.sources
+                    .map((src: string, index: number) => `**Source ${index + 1}**\n${src}`)
+                    .join("\n\n");
+
+                    botResponse += `\n\n### 📚 Medical Sources\n\n${sourcesText}`;
+                }
 
                 setResponseQueue(botResponse.split('. ').map((line: string) => line.trim() + '.'));
             } catch (error) {

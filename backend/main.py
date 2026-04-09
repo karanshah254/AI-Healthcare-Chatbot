@@ -6,6 +6,8 @@ import os
 from dotenv import load_dotenv
 from chat_memory import chat_history
 from langdetect import detect
+from rag.vector_search import search_vector_db
+import re
 
 load_dotenv()
 
@@ -32,11 +34,27 @@ GROQ_URL = os.getenv("GROQ_URL")
 
 @app.post("/chat")
 async def chat_with_ai(query: Query):
-    user_language = detect(query.message)
+    try:
+        user_language = detect(query.message)
+
+        retrieved_chunks = search_vector_db(query.message)
+    
+        formatted_chunks = []
+
+        for chunk in retrieved_chunks:
+            chunk = re.sub(r'^\d+\s+', '', chunk)
+            chunk = chunk.replace("✱", "\n- ")
+            chunk = chunk.strip()
+            formatted_chunks.append(chunk)
+
+        retrieved_context = "\n\n".join(formatted_chunks)
+
+        retrieved_context = "### 📚 Retrieved Medical Knowledge\n\n" + retrieved_context
+    except:
+        user_language = "en"
 
     if user_language == "hi":
-        system_prompt = (
-            """
+        system_prompt = """
             आप एक सहायक और पेशेवर एआई सहायक हैं जो केवल चिकित्सा और स्वास्थ्य देखभाल विषयों में गहन विशेषज्ञता रखते हैं। 
             आपको केवल चिकित्सा लक्षणों, उपचारों, बीमारियों, स्वास्थ्य सलाह और इसी तरह के स्वास्थ्य देखभाल विषयों से संबंधित प्रश्नों का उत्तर देना है। 
             यदि प्रश्न चिकित्सा या स्वास्थ्य देखभाल से संबंधित नहीं है, तो केवल इस संदेश के साथ उत्तर दें:
@@ -63,10 +81,8 @@ async def chat_with_ai(query: Query):
             'माफ़ कीजिए, मैं उसमें सहायता नहीं कर सकता। मेरा उद्देश्य केवल चिकित्सा और स्वास्थ्य देखभाल जानकारी प्रदान करना है।'
             बेहतर समझ के लिए किसी भी प्रश्न का उत्तर यथासंभव लंबा और विस्तृत दें
             """
-        )
     elif user_language == "gu":
-        system_prompt = (
-            """
+        system_prompt = """
             તમે એક સહાયક અને વ્યાવસાયિક એઆઇ સહાયક છો જે માત્ર તબીબી અને આરોગ્ય સંભાળ વિષયોમાં ઊંડું જ્ઞાન ધરાવે છે. 
             તમે માત્ર તબીબી લક્ષણો, સારવાર, રોગો, આરોગ્યની સલાહ અને સંબંધિત આરોગ્ય વિષયક પ્રશ્નોના જવાબ આપવા માટે નિયુક્ત છો. 
             જો પ્રશ્ન તબીબી કે આરોગ્ય સંભાળ સંબંધિત નથી, તો માત્ર આ સંદેશ આપો:
@@ -93,7 +109,6 @@ async def chat_with_ai(query: Query):
             'માફ કરો, હું એમાં સહાય કરી શકતો નથી. હું માત્ર તબીબી અને આરોગ્ય માહિતી પૂરું પાડી શકું છું.'
             સારી સમજણ માટે શક્ય તેટલા લાંબા અને વિગતવાર કોઈપણ પ્રશ્નનો જવાબ આપો.
             """
-        )
     elif user_language == "en":
         system_prompt = (
             "You are a helpful and professional AI assistant with deep expertise in medical and healthcare topics only. "
@@ -127,7 +142,16 @@ async def chat_with_ai(query: Query):
     else:
         system_prompt = "For other languages, except these 3, your response is we should only response to queries which are in english, hindi or gujarati."
 
-    messages = [{"role": "system", "content": system_prompt}]
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+            + "\n\nRelevant Medical Knowledge:\n"
+            + retrieved_context,
+        }
+    ]
+
+    # print("\nRetrieved Context in System Prompt:\n", retrieved_context)
 
     for pair in chat_history:
         messages.append({"role": "user", "content": pair["user"]})
@@ -135,24 +159,35 @@ async def chat_with_ai(query: Query):
 
     messages.append({"role": "user", "content": query.message})
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30) as client:
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json",
         }
 
         body = {
-            "model": "llama3-8b-8192",
+            "model": "llama-3.1-8b-instant",
             "messages": messages,
+            "temperature": 0.3,
         }
 
-        response = await client.post(GROQ_URL, headers=headers, json=body)
-        response.raise_for_status()
-        ai_response = response.json()["choices"][0]["message"]["content"]
+        try:
+            response = await client.post(GROQ_URL, headers=headers, json=body)
+
+            response.raise_for_status()
+
+        except httpx.HTTPStatusError as e:
+            print("Groq API Error:", e.response.text)
+            raise
+
+        data = response.json()
+
+        ai_response = data["choices"][0]["message"]["content"] + "\n\n\n" + retrieved_context
 
     chat_history.append({"user": query.message, "bot": ai_response})
 
-    return {"reply": ai_response}
+    # return {"reply": ai_response + "\n\n\n" + retrieved_context}
+    return {"reply": ai_response, "sources": retrieved_chunks}
 
 
 @app.get("/chat/history")
